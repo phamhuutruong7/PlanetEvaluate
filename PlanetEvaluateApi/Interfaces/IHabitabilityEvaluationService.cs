@@ -1,30 +1,34 @@
 using PlanetEvaluateApi.Models;
-using PlanetEvaluateApi.Enums;
 
 namespace PlanetEvaluateApi.Interfaces
 {
     /// <summary>
-    /// Interface for habitability evaluation services
+    /// Service interface for planet habitability evaluation operations
     /// </summary>
     public interface IHabitabilityEvaluationService
     {
         /// <summary>
-        /// Evaluates the habitability of a planet by its ID
+        /// Evaluate the habitability of a specific planet
         /// </summary>
         /// <param name="planetId">The ID of the planet to evaluate</param>
-        /// <returns>Complete habitability evaluation</returns>
+        /// <returns>Habitability evaluation results</returns>
         Task<HabitabilityEvaluation> EvaluatePlanetHabitabilityAsync(int planetId);
 
         /// <summary>
-        /// Ranks all planets by their habitability scores
+        /// Rank all planets by their habitability scores
         /// </summary>
-        /// <returns>List of planets ranked by habitability (best first)</returns>
-        Task<List<HabitabilityEvaluation>> RankPlanetsByHabitabilityAsync();
+        /// <returns>List of planets ranked by habitability (best to worst)</returns>
+        Task<List<HabitabilityEvaluation>> RankPlanetsByHabitabilityAsync();        /// <summary>
+        /// Find the most habitable planet
+        /// </summary>
+        /// <returns>The planet with the highest habitability score</returns>
+        Task<HabitabilityEvaluation> FindMostHabitablePlanetAsync();
 
         /// <summary>
-        /// Finds the most habitable planet
+        /// Calculate individual factor scores for a planet
         /// </summary>
-        /// <returns>The most habitable planet evaluation</returns>
-        Task<HabitabilityEvaluation> FindMostHabitablePlanetAsync();
+        /// <param name="planet">The planet to calculate scores for</param>
+        /// <returns>Individual factor scores breakdown</returns>
+        HabitabilityFactorScores CalculateFactorScores(Planet planet);
     }
 }

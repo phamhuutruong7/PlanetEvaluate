@@ -84,7 +84,7 @@ namespace PlanetEvaluateApi.Services
             return rankings.First();
         }
 
-        private HabitabilityFactorScores CalculateFactorScores(Planet planet)
+        public HabitabilityFactorScores CalculateFactorScores(Planet planet)
         {
             return new HabitabilityFactorScores
             {
@@ -100,23 +100,36 @@ namespace PlanetEvaluateApi.Services
         private double CalculateOxygenScore(double? oxygenVolume)
         {
             if (!oxygenVolume.HasValue) return 0;
+
+            const double optimal = 21.0; // Earth's oxygen percentage
+            const double minViable = 16.0; // Minimum for human survival
+            const double maxViable = 23.5; // Maximum safe level
+
+            if (oxygenVolume.Value < minViable)
+                return Math.Max(0, (oxygenVolume.Value / minViable) * 50);
             
-            var optimal = PlanetConstants.OptimalOxygenVolume;
-            var difference = Math.Abs(oxygenVolume.Value - optimal);
-            var maxDifference = Math.Max(optimal, 100 - optimal);
+            if (oxygenVolume.Value > maxViable)
+                return Math.Max(0, 100 - ((oxygenVolume.Value - maxViable) / (35 - maxViable) * 100));
             
-            return Math.Max(0, 100 - (difference / maxDifference * 100));
+            // In optimal range
+            var distanceFromOptimal = Math.Abs(oxygenVolume.Value - optimal);
+            return 100 - (distanceFromOptimal / (optimal - minViable) * 30);
         }
 
         private double CalculateWaterScore(double? waterVolume)
         {
             if (!waterVolume.HasValue) return 0;
-            
-            var optimal = PlanetConstants.OptimalWaterVolume;
-            var difference = Math.Abs(waterVolume.Value - optimal);
-            var maxDifference = Math.Max(optimal, 100 - optimal);
-            
-            return Math.Max(0, 100 - (difference / maxDifference * 100));
+
+            return waterVolume.Value switch
+            {
+                >= 70 => 100,
+                >= 50 => 90,
+                >= 30 => 70,
+                >= 15 => 50,
+                >= 5 => 30,
+                > 0 => 20,
+                _ => 0
+            };
         }
 
         private double CalculateAtmosphereScore(bool hasAtmosphere)
@@ -126,28 +139,34 @@ namespace PlanetEvaluateApi.Services
 
         private double CalculateDistanceScore(double? distanceFromSun)
         {
-            if (!distanceFromSun.HasValue) return 50;
-            
-            var optimal = PlanetConstants.OptimalDistanceFromSun;
-            var difference = Math.Abs(distanceFromSun.Value - optimal);
-            var maxDifference = 5.0;
-            
-            return Math.Max(0, 100 - (difference / maxDifference * 100));
-        }
+            if (!distanceFromSun.HasValue) return 0;
 
-        private double CalculateSafetyScore(int? threateningCreature)
-        {
-            if (!threateningCreature.HasValue) return 50;
+            // Habitable zone distances (in AU, like Earth = 1 AU)
+            const double innerHZ = 0.95;
+            const double outerHZ = 1.37;
+            const double optimal = 1.0; // Earth distance
+
+            if (distanceFromSun.Value < innerHZ || distanceFromSun.Value > outerHZ)
+                return 0;
+
+            var distanceFromOptimal = Math.Abs(distanceFromSun.Value - optimal);
+            var maxDeviation = Math.Max(optimal - innerHZ, outerHZ - optimal);
             
+            return Math.Max(0, 100 - (distanceFromOptimal / maxDeviation * 100));
+        }        private double CalculateSafetyScore(int? threateningCreature)
+        {
+            if (!threateningCreature.HasValue) return 50; // Neutral if unknown
+
             // Lower threat level = higher safety score
+            // Scale: 1 (safest) to 10 (most dangerous)
             return Math.Max(0, 100 - ((threateningCreature.Value - 1) * 100.0 / 9.0));
         }
 
         private double CalculateTerrainScore(int? hardnessOfRock)
         {
-            if (!hardnessOfRock.HasValue) return 50;
-            
-            var optimal = PlanetConstants.OptimalRockHardness;
+            if (!hardnessOfRock.HasValue) return 50; // Neutral if unknown
+
+            const int optimal = 4; // Moderate hardness
             var difference = Math.Abs(hardnessOfRock.Value - optimal);
             var maxDifference = Math.Max(optimal - 1, 10 - optimal);
             
@@ -162,7 +181,9 @@ namespace PlanetEvaluateApi.Services
                    scores.DistanceScore * PlanetConstants.DistanceWeight +
                    scores.SafetyScore * PlanetConstants.SafetyWeight +
                    scores.TerrainScore * PlanetConstants.TerrainWeight);
-        }        private HabitabilityLevel DetermineHabitabilityLevel(double score)
+        }
+
+        private HabitabilityLevel DetermineHabitabilityLevel(double score)
         {
             return score switch
             {
@@ -199,7 +220,9 @@ namespace PlanetEvaluateApi.Services
             else if (scores.TerrainScore < 30) negative.Add("Challenging terrain conditions");
 
             return (positive, negative);
-        }        private string GenerateHabitabilitySummary(HabitabilityLevel level, double score)
+        }
+
+        private string GenerateHabitabilitySummary(HabitabilityLevel level, double score)
         {
             return level switch
             {
