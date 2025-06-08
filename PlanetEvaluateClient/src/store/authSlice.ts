@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { AuthState, LoginRequest } from '../types/auth.types';
+import { AuthState, LoginRequest, UserResponse, mapUserResponseToUser, mapLoginResponseToUser } from '../types/auth.types';
 import { authService } from '../services/auth.service';
 
 const initialState: AuthState = {
@@ -48,8 +48,8 @@ export const getCurrentUser = createAsyncThunk(
   'auth/getCurrentUser',
   async (_, { rejectWithValue }) => {
     try {
-      const user = await authService.getCurrentUser();
-      return user;
+      const userResponse: UserResponse = await authService.getCurrentUser();
+      return mapUserResponseToUser(userResponse);
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || 'Failed to get user'
@@ -107,14 +107,14 @@ const authSlice = createSlice({
       .addCase(loginUser.pending, (state) => {
         state.isLoading = true;
         state.error = null;
-      })
-      .addCase(loginUser.fulfilled, (state, action) => {
+      })      .addCase(loginUser.fulfilled, (state, action) => {
         console.log('=== LOGIN FULFILLED ===');
         console.log('Action payload:', action.payload);
         
         state.isLoading = false;
-        // Extract user data (exclude token)
-        const { token, ...userData } = action.payload;
+        // Convert login response to User type and extract token
+        const { token, ...loginResponseData } = action.payload;
+        const userData = mapLoginResponseToUser({ ...loginResponseData, token } as any);
         state.user = userData;
         state.token = token;
         state.isAuthenticated = true;

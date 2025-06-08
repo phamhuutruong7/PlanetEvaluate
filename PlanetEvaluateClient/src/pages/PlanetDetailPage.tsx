@@ -23,8 +23,13 @@ import {
   Delete as DeleteIcon,
   Air as AtmosphereIcon,
   Terrain as TerrainIcon,
+  Assessment as HabitabilityIcon,
+  CheckCircle as CheckIcon,
+  Cancel as CancelIcon,
 } from '@mui/icons-material';
 import { Planet } from '../types/planet.types';
+import { HabitabilityEvaluation, HabitabilityLevel } from '../types/habitability.types';
+import { habitabilityService } from '../services/habitability.service';
 
 const PlanetDetailPage: React.FC = () => {
   const navigate = useNavigate();
@@ -36,10 +41,29 @@ const PlanetDetailPage: React.FC = () => {
   const [planet, setPlanet] = useState<Planet | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoadingPlanet, setIsLoadingPlanet] = useState(false);
+  const [habitabilityEvaluation, setHabitabilityEvaluation] = useState<HabitabilityEvaluation | null>(null);
+  const [isLoadingHabitability, setIsLoadingHabitability] = useState(false);
+  const [habitabilityError, setHabitabilityError] = useState<string | null>(null);
 
   // Permission checks
   const canUserEditPlanet = canEditPlanet(user?.role);
   const canUserDeletePlanet = canDeletePlanet(user?.role);
+
+  // Load habitability evaluation
+  const loadHabitabilityEvaluation = async (planetId: number) => {
+    setIsLoadingHabitability(true);
+    setHabitabilityError(null);
+
+    try {
+      const evaluation = await habitabilityService.evaluatePlanet(planetId);
+      setHabitabilityEvaluation(evaluation);
+    } catch (error: any) {
+      console.error('Error loading habitability evaluation:', error);
+      setHabitabilityError('Failed to load habitability evaluation');
+    } finally {
+      setIsLoadingHabitability(false);
+    }
+  };
 
   // Load planet data on component mount
   useEffect(() => {
@@ -67,10 +91,51 @@ const PlanetDetailPage: React.FC = () => {
       }
 
       setPlanet(targetPlanet || null);
+      
+      // Load habitability evaluation after planet is loaded
+      if (targetPlanet) {
+        await loadHabitabilityEvaluation(planetId);
+      }
     };
 
     loadPlanetData();
   }, [id, planets, dispatch, navigate]);
+
+  const getHabitabilityColor = (level: HabitabilityLevel): 'success' | 'warning' | 'error' | 'info' => {
+    switch (level) {
+      case HabitabilityLevel.Ideal:
+      case HabitabilityLevel.Excellent:
+        return 'success';
+      case HabitabilityLevel.Good:
+        return 'info';
+      case HabitabilityLevel.Fair:
+        return 'warning';
+      case HabitabilityLevel.Poor:
+      case HabitabilityLevel.Uninhabitable:
+        return 'error';
+      default:
+        return 'error';
+    }
+  };
+
+  const getHabitabilityLevelText = (level: HabitabilityLevel): string => {
+    switch (level) {
+      case HabitabilityLevel.Ideal:
+        return 'Ideal';
+      case HabitabilityLevel.Excellent:
+        return 'Excellent';
+      case HabitabilityLevel.Good:
+        return 'Good';
+      case HabitabilityLevel.Fair:
+        return 'Fair';
+      case HabitabilityLevel.Poor:
+        return 'Poor';
+      case HabitabilityLevel.Uninhabitable:
+        return 'Uninhabitable';
+      default:
+        return 'Unknown';
+    }
+  };
 
   const handleBack = () => {
     navigate('/dashboard');
@@ -183,6 +248,160 @@ const PlanetDetailPage: React.FC = () => {
             </Box>
           </Box>
         </Paper>
+
+        {/* Habitability Evaluation Section */}
+        {habitabilityEvaluation && (
+          <Card elevation={3} sx={{ mb: 3 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+                <HabitabilityIcon sx={{ mr: 1 }} />
+                Habitability Assessment
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+              
+              {/* Overall Score and Level */}
+              <Box sx={{ mb: 3 }}>
+                <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                  <Typography variant="h6" color="text.secondary">Overall Habitability Score:</Typography>
+                  <Typography variant="h5" fontWeight="bold" color="primary.main">
+                    {habitabilityEvaluation.overallHabitabilityScore.toFixed(1)}/100
+                  </Typography>
+                </Box>                <Box display="flex" justifyContent="center" sx={{ mb: 2 }}>
+                  <Chip 
+                    label={getHabitabilityLevelText(habitabilityEvaluation.habitabilityLevel)}
+                    size="medium"
+                    color={getHabitabilityColor(habitabilityEvaluation.habitabilityLevel)}
+                    sx={{ fontSize: '1.1rem', py: 1, px: 2 }}
+                  />
+                </Box>
+                <LinearProgress 
+                  variant="determinate" 
+                  value={habitabilityEvaluation.overallHabitabilityScore} 
+                  sx={{ height: 12, borderRadius: 6 }}
+                  color={getHabitabilityColor(habitabilityEvaluation.habitabilityLevel)}
+                />
+              </Box>              {/* Factor Scores */}
+              <Typography variant="h6" gutterBottom>Habitability Factor Breakdown</Typography>
+              <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, 
+                gap: 2, 
+                mb: 3 
+              }}>
+                <Paper variant="outlined" sx={{ p: 2 }}>
+                  <Typography variant="subtitle2" color="text.secondary">Oxygen Score</Typography>
+                  <Typography variant="h6" fontWeight="bold">{habitabilityEvaluation.factorScores.oxygenScore.toFixed(1)}</Typography>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={habitabilityEvaluation.factorScores.oxygenScore} 
+                    sx={{ mt: 1, height: 6, borderRadius: 3 }}
+                    color="info"
+                  />
+                </Paper>
+                <Paper variant="outlined" sx={{ p: 2 }}>
+                  <Typography variant="subtitle2" color="text.secondary">Water Score</Typography>
+                  <Typography variant="h6" fontWeight="bold">{habitabilityEvaluation.factorScores.waterScore.toFixed(1)}</Typography>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={habitabilityEvaluation.factorScores.waterScore} 
+                    sx={{ mt: 1, height: 6, borderRadius: 3 }}
+                    color="primary"
+                  />
+                </Paper>
+                <Paper variant="outlined" sx={{ p: 2 }}>
+                  <Typography variant="subtitle2" color="text.secondary">Atmosphere Score</Typography>
+                  <Typography variant="h6" fontWeight="bold">{habitabilityEvaluation.factorScores.atmosphereScore.toFixed(1)}</Typography>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={habitabilityEvaluation.factorScores.atmosphereScore} 
+                    sx={{ mt: 1, height: 6, borderRadius: 3 }}
+                    color="success"
+                  />
+                </Paper>
+                <Paper variant="outlined" sx={{ p: 2 }}>
+                  <Typography variant="subtitle2" color="text.secondary">Distance Score</Typography>
+                  <Typography variant="h6" fontWeight="bold">{habitabilityEvaluation.factorScores.distanceScore.toFixed(1)}</Typography>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={habitabilityEvaluation.factorScores.distanceScore} 
+                    sx={{ mt: 1, height: 6, borderRadius: 3 }}
+                    color="warning"
+                  />
+                </Paper>
+                <Paper variant="outlined" sx={{ p: 2 }}>
+                  <Typography variant="subtitle2" color="text.secondary">Safety Score</Typography>
+                  <Typography variant="h6" fontWeight="bold">{habitabilityEvaluation.factorScores.safetyScore.toFixed(1)}</Typography>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={habitabilityEvaluation.factorScores.safetyScore} 
+                    sx={{ mt: 1, height: 6, borderRadius: 3 }}
+                    color="error"
+                  />
+                </Paper>
+                <Paper variant="outlined" sx={{ p: 2 }}>
+                  <Typography variant="subtitle2" color="text.secondary">Terrain Score</Typography>
+                  <Typography variant="h6" fontWeight="bold">{habitabilityEvaluation.factorScores.terrainScore.toFixed(1)}</Typography>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={habitabilityEvaluation.factorScores.terrainScore} 
+                    sx={{ mt: 1, height: 6, borderRadius: 3 }}
+                    color="secondary"
+                  />
+                </Paper>
+              </Box>
+
+              {/* Positive and Negative Factors */}
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3, mb: 3 }}>
+                <Box>
+                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', color: 'success.main' }}>
+                    <CheckIcon sx={{ mr: 1 }} />
+                    Positive Factors
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {habitabilityEvaluation.positiveFactors.map((factor, index) => (
+                      <Chip key={index} label={factor} size="small" color="success" variant="outlined" />
+                    ))}
+                  </Box>
+                </Box>
+                <Box>
+                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', color: 'error.main' }}>
+                    <CancelIcon sx={{ mr: 1 }} />
+                    Negative Factors
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {habitabilityEvaluation.negativeFactors.map((factor, index) => (
+                      <Chip key={index} label={factor} size="small" color="error" variant="outlined" />
+                    ))}
+                  </Box>
+                </Box>
+              </Box>
+
+              {/* Summary */}
+              <Typography variant="h6" gutterBottom>Assessment Summary</Typography>
+              <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                {habitabilityEvaluation.summary}
+              </Typography>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Loading or Error for Habitability */}
+        {isLoadingHabitability && (
+          <Card elevation={3} sx={{ mb: 3 }}>
+            <CardContent sx={{ textAlign: 'center', py: 4 }}>
+              <CircularProgress size={40} sx={{ mb: 2 }} />
+              <Typography variant="h6" color="text.secondary">
+                Analyzing Habitability...
+              </Typography>
+            </CardContent>
+          </Card>
+        )}
+
+        {habitabilityError && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {habitabilityError}
+          </Alert>
+        )}
 
         {/* Main Content */}
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
@@ -354,21 +573,13 @@ const PlanetDetailPage: React.FC = () => {
               </Paper>
               <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
                 <Typography variant="subtitle2" color="text.secondary">
-                  Habitability
+                  Evaluation Date
                 </Typography>
-                <Chip 
-                  label={
-                    (planet.oxygenVolume ?? 0) > 15 && (planet.waterVolume ?? 0) > 30 && planet.hasAtmosphere
-                      ? 'Potentially Habitable'
-                      : 'Not Habitable'
-                  }
-                  size="small"
-                  color={
-                    (planet.oxygenVolume ?? 0) > 15 && (planet.waterVolume ?? 0) > 30 && planet.hasAtmosphere
-                      ? 'success'
-                      : 'error'
-                  }
-                />
+                <Typography variant="body2" fontWeight="medium">
+                  {habitabilityEvaluation?.evaluatedAt 
+                    ? new Date(habitabilityEvaluation.evaluatedAt).toLocaleDateString() 
+                    : 'Not evaluated'}
+                </Typography>
               </Paper>
             </Box>
           </CardContent>
