@@ -14,15 +14,14 @@ namespace PlanetEvaluateApi.Data
             {
                 // Create default users
                 var users = new List<User>
-                {
-                    new User
+                {                    new User
                     {
                         UserName = "superadmin",
                         Email = "superadmin@planetevaluate.com",
                         PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
                         FirstName = "Super",
                         LastName = "Admin",
-                        Role = "superadmin",
+                        Role = "SuperAdmin",
                         AssignedPlanetIds = null, // SuperAdmin has access to all
                         CreatedAt = DateTime.UtcNow
                     },                new User
@@ -32,30 +31,40 @@ namespace PlanetEvaluateApi.Data
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
                     FirstName = "Planet",
                     LastName = "Admin",
-                    Role = "planetadmin",
+                    Role = "PlanetAdmin",
                     AssignedPlanetIds = "[1,2,3,4,5]", // JSON array of planet IDs - has access to first 5 planets
                     CreatedAt = DateTime.UtcNow
-                },
-                new User
+                },                new User
                 {
                     UserName = "viewer1",
                     Email = "viewer1@planetevaluate.com",
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("viewer123"),
                     FirstName = "Viewer",
-                    LastName = "One",
-                    Role = "viewer",
-                    AssignedPlanetIds = "[1,2,3]", // JSON array of planet IDs - has access to first 3 planets
+                    LastName = "Type One",
+                    Role = "Viewer1", // Same permissions as Viewer2 but different planet access
+                    AssignedPlanetIds = "[1]", // JSON array - access to planet 1 only
                     CreatedAt = DateTime.UtcNow
                 },
                 new User
                 {
                     UserName = "viewer2",
                     Email = "viewer2@planetevaluate.com",
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("viewer123"),
                     FirstName = "Viewer",
-                    LastName = "Two",
-                    Role = "viewer",
-                    AssignedPlanetIds = "[4,5,6,7,8]", // JSON array of planet IDs - has access to planets 4-8
+                    LastName = "Type Two",
+                    Role = "Viewer2", // Same permissions as Viewer1 but different planet access
+                    AssignedPlanetIds = "[1,3]", // JSON array - access to planets 1 and 3
+                    CreatedAt = DateTime.UtcNow
+                },
+                new User
+                {
+                    UserName = "viewergeneric",
+                    Email = "viewergeneric@planetevaluate.com",
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+                    FirstName = "Generic",
+                    LastName = "Viewer",
+                    Role = "Viewer2", // Generic viewer using assigned planets
+                    AssignedPlanetIds = "[2,4,5]", // JSON array of planet IDs - has access to specific planets
                     CreatedAt = DateTime.UtcNow
                 }
                 };

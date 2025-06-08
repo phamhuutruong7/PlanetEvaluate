@@ -29,12 +29,10 @@ namespace PlanetEvaluateApi.Models
 
         public string? AssignedPlanetIds { get; set; } // JSON string of planet IDs
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        public DateTime? LastLogin { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;        public DateTime? LastLogin { get; set; }
 
         [Required]
         [StringLength(20)]
-        public string Role { get; set; } = "viewer"; // superadmin, planetadmin, viewer
+        public string Role { get; set; } = "Viewer2";
     }
 }

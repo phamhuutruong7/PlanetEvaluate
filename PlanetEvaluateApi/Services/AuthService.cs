@@ -50,7 +50,9 @@ namespace PlanetEvaluateApi.Services
         {
             var user = await GetUserByUsernameAsync(username);
             return user != null && BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
-        }        public string GenerateJwtToken(User user)
+        }
+
+        public string GenerateJwtToken(User user)
         {
             var jwtSettings = _configuration.GetSection("JWT");
             var secretKey = jwtSettings["Key"] ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLong!";
@@ -58,14 +60,12 @@ namespace PlanetEvaluateApi.Services
             var audience = jwtSettings["Audience"] ?? "PlanetEvaluateClient";
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
-            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var claims = new[]
+            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);            var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.UserName),
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role),
+                new Claim(ClaimTypes.Role, user.Role.ToString()),
                 new Claim("FirstName", user.FirstName),
                 new Claim("LastName", user.LastName),
                 new Claim("AssignedPlanetIds", user.AssignedPlanetIds ?? "")
@@ -100,7 +100,37 @@ namespace PlanetEvaluateApi.Services
                 // Token parsing failed
             }
             
-            return null;
+            return null;        }
+
+        public ClaimsPrincipal? ValidateToken(string token)
+        {
+            try
+            {
+                var jwtSettings = _configuration.GetSection("JWT");
+                var secretKey = jwtSettings["Key"] ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLong!";
+                
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.UTF8.GetBytes(secretKey);
+                
+                var validationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtSettings["Issuer"] ?? "PlanetEvaluateApi",
+                    ValidateAudience = true,
+                    ValidAudience = jwtSettings["Audience"] ?? "PlanetEvaluateClient",
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                };
+
+                var principal = tokenHandler.ValidateToken(token.Replace("Bearer ", ""), validationParameters, out SecurityToken validatedToken);
+                return principal;
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

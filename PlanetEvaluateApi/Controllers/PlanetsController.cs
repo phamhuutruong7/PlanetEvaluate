@@ -17,15 +17,19 @@ namespace PlanetEvaluateApi.Controllers
         public PlanetsController(IPlanetService planetService)
         {
             _planetService = planetService;
-        }
-
+        }        
+        
         [HttpGet]
+        [Authorize(Roles = "SuperAdmin,PlanetAdmin,Viewer1,Viewer2")]
         public async Task<ActionResult<IEnumerable<PlanetDto>>> GetAllPlanets()
         {
             try
             {
                 var userId = GetCurrentUserId();
-                var planets = await _planetService.GetAllPlanetsAsync(userId);
+                if (!userId.HasValue)
+                    return Unauthorized(new { message = "Invalid user token" });
+
+                var planets = await _planetService.GetAllPlanetsAsync(userId.Value);
                 
                 var planetDtos = planets.Select(p => new PlanetDto
                 {
@@ -48,19 +52,27 @@ namespace PlanetEvaluateApi.Controllers
 
                 return Ok(planetDtos);
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "An error occurred while fetching planets", error = ex.Message });
             }
-        }
-
+        }        
+        
         [HttpGet("{id}")]
+        [Authorize(Roles = "SuperAdmin,PlanetAdmin,Viewer1,Viewer2")]
         public async Task<ActionResult<PlanetDto>> GetPlanet(int id)
         {
             try
             {
                 var userId = GetCurrentUserId();
-                var planet = await _planetService.GetPlanetByIdAsync(id, userId);
+                if (!userId.HasValue)
+                    return Unauthorized(new { message = "Invalid user token" });
+
+                var planet = await _planetService.GetPlanetByIdAsync(id, userId.Value);
                 
                 if (planet == null)
                 {
@@ -88,23 +100,25 @@ namespace PlanetEvaluateApi.Controllers
 
                 return Ok(planetDto);
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "An error occurred while fetching the planet", error = ex.Message });
             }
-        }
-
+        }        
+        
         [HttpPost]
+        [Authorize(Roles = "SuperAdmin,PlanetAdmin")]
         public async Task<ActionResult<PlanetDto>> CreatePlanet([FromBody] CreatePlanetDto createPlanetDto)
         {
             try
             {
-                // Only SuperAdmin and PlanetAdmin can create planets
-                var userRole = GetCurrentUserRole();
-                if (userRole != "superadmin" && userRole != "planetadmin")
-                {
-                    return Forbid("Insufficient permissions to create planets");
-                }
+                var userId = GetCurrentUserId();
+                if (!userId.HasValue)
+                    return Unauthorized(new { message = "Invalid user token" });
 
                 var planet = new Planet
                 {
@@ -122,7 +136,7 @@ namespace PlanetEvaluateApi.Controllers
                     Description = createPlanetDto.Description
                 };
 
-                var createdPlanet = await _planetService.CreatePlanetAsync(planet);
+                var createdPlanet = await _planetService.CreatePlanetAsync(planet, userId.Value);
                 
                 var planetDto = new PlanetDto
                 {
@@ -145,28 +159,28 @@ namespace PlanetEvaluateApi.Controllers
 
                 return CreatedAtAction(nameof(GetPlanet), new { id = createdPlanet.Id }, planetDto);
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "An error occurred while creating the planet", error = ex.Message });
             }
-        }
-
+        }        
+        
         [HttpPut("{id}")]
+        [Authorize(Roles = "SuperAdmin,PlanetAdmin")]
         public async Task<ActionResult<PlanetDto>> UpdatePlanet(int id, [FromBody] UpdatePlanetDto updatePlanetDto)
         {
             try
             {
-                // Only SuperAdmin and PlanetAdmin can update planets
-                var userRole = GetCurrentUserRole();
-                if (userRole != "superadmin" && userRole != "planetadmin")
-                {
-                    return Forbid("Insufficient permissions to update planets");
-                }
-
                 var userId = GetCurrentUserId();
+                if (!userId.HasValue)
+                    return Unauthorized(new { message = "Invalid user token" });
                 
                 // Get existing planet to preserve unchanged fields
-                var existingPlanet = await _planetService.GetPlanetByIdAsync(id, userId);
+                var existingPlanet = await _planetService.GetPlanetByIdAsync(id, userId.Value);
                 if (existingPlanet == null)
                 {
                     return NotFound(new { message = "Planet not found or access denied" });
@@ -191,7 +205,7 @@ namespace PlanetEvaluateApi.Controllers
                     CreatedAt = existingPlanet.CreatedAt
                 };
 
-                var updatedPlanet = await _planetService.UpdatePlanetAsync(id, planet, userId);
+                var updatedPlanet = await _planetService.UpdatePlanetAsync(id, planet, userId.Value);
                 if (updatedPlanet == null)
                 {
                     return NotFound(new { message = "Planet not found or access denied" });
@@ -218,26 +232,27 @@ namespace PlanetEvaluateApi.Controllers
 
                 return Ok(planetDto);
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "An error occurred while updating the planet", error = ex.Message });
             }
-        }
-
+        }        
+        
         [HttpDelete("{id}")]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<ActionResult> DeletePlanet(int id)
         {
             try
             {
-                // Only SuperAdmin and PlanetAdmin can delete planets
-                var userRole = GetCurrentUserRole();
-                if (userRole != "superadmin" && userRole != "planetadmin")
-                {
-                    return Forbid("Insufficient permissions to delete planets");
-                }
-
                 var userId = GetCurrentUserId();
-                var success = await _planetService.DeletePlanetAsync(id, userId);
+                if (!userId.HasValue)
+                    return Unauthorized(new { message = "Invalid user token" });
+
+                var success = await _planetService.DeletePlanetAsync(id, userId.Value);
                 
                 if (!success)
                 {
@@ -245,6 +260,10 @@ namespace PlanetEvaluateApi.Controllers
                 }
 
                 return NoContent();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -260,11 +279,6 @@ namespace PlanetEvaluateApi.Controllers
                 return userId;
             }
             return null;
-        }
-
-        private string? GetCurrentUserRole()
-        {
-            return User.FindFirst(ClaimTypes.Role)?.Value;
         }
     }
 }

@@ -1,4 +1,5 @@
 using PlanetEvaluateApi.Models;
+using System.Security.Claims;
 
 namespace PlanetEvaluateApi.Interfaces
 {
@@ -10,5 +11,6 @@ namespace PlanetEvaluateApi.Interfaces
         Task<bool> ValidateUserAsync(string username, string password);
         string GenerateJwtToken(User user);
         int? GetUserIdFromToken(string token);
+        ClaimsPrincipal? ValidateToken(string token);
     }
 }

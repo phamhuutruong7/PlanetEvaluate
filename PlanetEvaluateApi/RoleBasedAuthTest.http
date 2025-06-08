@@ -1,0 +1,299 @@
+### Role-Based Authorization Test File
+### Tests the new UserRole enum-based authorization system
+
+@baseUrl = http://localhost:5219/api
+@superAdminToken = 
+@planetAdminToken = 
+@viewer1Token = 
+@viewer2Token = 
+
+### 1. Login as SuperAdmin (Full Access)
+# @name superAdminLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "superadmin",
+  "password": "admin123"
+}
+
+### Extract SuperAdmin token
+@superAdminToken = {{superAdminLogin.response.body.token}}
+
+### 2. Login as PlanetAdmin (Planet Management)
+# @name planetAdminLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "planetadmin",
+  "password": "admin123"
+}
+
+### Extract PlanetAdmin token
+@planetAdminToken = {{planetAdminLogin.response.body.token}}
+
+### 3. Login as Viewer1 (View and Analyze)
+# @name viewer1Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "viewer1",
+  "password": "viewer123"
+}
+
+### Extract Viewer1 token
+@viewer1Token = {{viewer1Login.response.body.token}}
+
+### 4. Login as Viewer2 (Limited View)
+# @name viewer2Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "viewer2",
+  "password": "viewer123"
+}
+
+### Extract Viewer2 token
+@viewer2Token = {{viewer2Login.response.body.token}}
+
+###############################################
+### SUPERADMIN TESTS (Full Access)
+###############################################
+
+### 5. SuperAdmin - Get all users (SHOULD WORK)
+GET {{baseUrl}}/auth/users
+Authorization: Bearer {{superAdminToken}}
+
+### 6. SuperAdmin - View planets (SHOULD WORK)
+GET {{baseUrl}}/planets
+Authorization: Bearer {{superAdminToken}}
+
+### 7. SuperAdmin - Create planet (SHOULD WORK)
+POST {{baseUrl}}/planets
+Authorization: Bearer {{superAdminToken}}
+Content-Type: application/json
+
+{
+  "name": "SuperAdmin Test Planet",
+  "type": "Terrestrial",
+  "mass": 1.2,
+  "radius": 6500.0,
+  "distanceFromSun": 140.0,
+  "numberOfMoons": 2,
+  "hasAtmosphere": true,
+  "oxygenVolume": 22.0,
+  "waterVolume": 65.0,
+  "hardnessOfRock": 6.0,
+  "threateningCreature": false,
+  "description": "Planet created by SuperAdmin for role testing"
+}
+
+### 8. SuperAdmin - Delete planet (SHOULD WORK - Only SuperAdmin can delete)
+DELETE {{baseUrl}}/planets/1
+Authorization: Bearer {{superAdminToken}}
+
+### 9. SuperAdmin - Evaluate habitability (SHOULD WORK)
+GET {{baseUrl}}/habitability/evaluate/1
+Authorization: Bearer {{superAdminToken}}
+
+### 10. SuperAdmin - Assign planet to user (SHOULD WORK)
+POST {{baseUrl}}/auth/users/3/assign-planet/2?permissionLevel=Read
+Authorization: Bearer {{superAdminToken}}
+
+###############################################
+### PLANETADMIN TESTS (Planet Management)
+###############################################
+
+### 11. PlanetAdmin - Get all users (SHOULD FAIL - Only SuperAdmin)
+GET {{baseUrl}}/auth/users
+Authorization: Bearer {{planetAdminToken}}
+
+### 12. PlanetAdmin - View planets (SHOULD WORK)
+GET {{baseUrl}}/planets
+Authorization: Bearer {{planetAdminToken}}
+
+### 13. PlanetAdmin - Create planet (SHOULD WORK)
+POST {{baseUrl}}/planets
+Authorization: Bearer {{planetAdminToken}}
+Content-Type: application/json
+
+{
+  "name": "PlanetAdmin Test Planet",
+  "type": "Rocky",
+  "mass": 0.9,
+  "radius": 5800.0,
+  "distanceFromSun": 110.0,
+  "numberOfMoons": 1,
+  "hasAtmosphere": false,
+  "oxygenVolume": 0.0,
+  "waterVolume": 5.0,
+  "hardnessOfRock": 8.5,
+  "threateningCreature": true,
+  "description": "Planet created by PlanetAdmin for role testing"
+}
+
+### 14. PlanetAdmin - Update planet (SHOULD WORK)
+PUT {{baseUrl}}/planets/2
+Authorization: Bearer {{planetAdminToken}}
+Content-Type: application/json
+
+{
+  "description": "Updated by PlanetAdmin - Role test successful"
+}
+
+### 15. PlanetAdmin - Delete planet (SHOULD FAIL - Only SuperAdmin can delete)
+DELETE {{baseUrl}}/planets/2
+Authorization: Bearer {{planetAdminToken}}
+
+### 16. PlanetAdmin - Evaluate habitability (SHOULD WORK)
+GET {{baseUrl}}/habitability/evaluate/2
+Authorization: Bearer {{planetAdminToken}}
+
+### 17. PlanetAdmin - Assign planet to user (SHOULD WORK)
+POST {{baseUrl}}/auth/users/4/assign-planet/2?permissionLevel=Read
+Authorization: Bearer {{planetAdminToken}}
+
+###############################################
+### VIEWER1 TESTS (View and Analyze)
+###############################################
+
+### 18. Viewer1 - Get all users (SHOULD FAIL - Only SuperAdmin)
+GET {{baseUrl}}/auth/users
+Authorization: Bearer {{viewer1Token}}
+
+### 19. Viewer1 - View planets (SHOULD WORK)
+GET {{baseUrl}}/planets
+Authorization: Bearer {{viewer1Token}}
+
+### 20. Viewer1 - Create planet (SHOULD FAIL - Only SuperAdmin/PlanetAdmin)
+POST {{baseUrl}}/planets
+Authorization: Bearer {{viewer1Token}}
+Content-Type: application/json
+
+{
+  "name": "Viewer1 Forbidden Planet",
+  "type": "Gas Giant"
+}
+
+### 21. Viewer1 - Update planet (SHOULD FAIL - Only SuperAdmin/PlanetAdmin)
+PUT {{baseUrl}}/planets/1
+Authorization: Bearer {{viewer1Token}}
+Content-Type: application/json
+
+{
+  "description": "This should fail"
+}
+
+### 22. Viewer1 - Delete planet (SHOULD FAIL - Only SuperAdmin)
+DELETE {{baseUrl}}/planets/1
+Authorization: Bearer {{viewer1Token}}
+
+### 23. Viewer1 - Evaluate habitability (SHOULD WORK)
+GET {{baseUrl}}/habitability/evaluate/1
+Authorization: Bearer {{viewer1Token}}
+
+### 24. Viewer1 - Rank planets by habitability (SHOULD WORK)
+GET {{baseUrl}}/habitability/rank
+Authorization: Bearer {{viewer1Token}}
+
+### 25. Viewer1 - Assign planet to user (SHOULD FAIL - Only SuperAdmin/PlanetAdmin)
+POST {{baseUrl}}/auth/users/4/assign-planet/1?permissionLevel=Read
+Authorization: Bearer {{viewer1Token}}
+
+###############################################
+### VIEWER2 TESTS (Limited View Only)
+###############################################
+
+### 26. Viewer2 - Get all users (SHOULD FAIL - Only SuperAdmin)
+GET {{baseUrl}}/auth/users
+Authorization: Bearer {{viewer2Token}}
+
+### 27. Viewer2 - View planets (SHOULD WORK)
+GET {{baseUrl}}/planets
+Authorization: Bearer {{viewer2Token}}
+
+### 28. Viewer2 - Create planet (SHOULD FAIL - Only SuperAdmin/PlanetAdmin)
+POST {{baseUrl}}/planets
+Authorization: Bearer {{viewer2Token}}
+Content-Type: application/json
+
+{
+  "name": "Viewer2 Forbidden Planet",
+  "type": "Ice Planet"
+}
+
+### 29. Viewer2 - Update planet (SHOULD FAIL - Only SuperAdmin/PlanetAdmin)
+PUT {{baseUrl}}/planets/1
+Authorization: Bearer {{viewer2Token}}
+Content-Type: application/json
+
+{
+  "description": "This should fail"
+}
+
+### 30. Viewer2 - Delete planet (SHOULD FAIL - Only SuperAdmin)
+DELETE {{baseUrl}}/planets/1
+Authorization: Bearer {{viewer2Token}}
+
+### 31. Viewer2 - Evaluate habitability (SHOULD FAIL - No access to habitability evaluation)
+GET {{baseUrl}}/habitability/evaluate/1
+Authorization: Bearer {{viewer2Token}}
+
+### 32. Viewer2 - Rank planets by habitability (SHOULD FAIL - No access to habitability evaluation)
+GET {{baseUrl}}/habitability/rank
+Authorization: Bearer {{viewer2Token}}
+
+### 33. Viewer2 - Assign planet to user (SHOULD FAIL - Only SuperAdmin/PlanetAdmin)
+POST {{baseUrl}}/auth/users/4/assign-planet/1?permissionLevel=Read
+Authorization: Bearer {{viewer2Token}}
+
+###############################################
+### UNAUTHORIZED ACCESS TESTS
+###############################################
+
+### 34. No token - View planets (SHOULD FAIL)
+GET {{baseUrl}}/planets
+
+### 35. Invalid token - View planets (SHOULD FAIL)
+GET {{baseUrl}}/planets
+Authorization: Bearer invalid_token_here
+
+### 36. No token - Evaluate habitability (SHOULD FAIL)
+GET {{baseUrl}}/habitability/evaluate/1
+
+###############################################
+### SUMMARY OF EXPECTED RESULTS
+###############################################
+
+# SuperAdmin (SuperAdmin role):
+# ✅ All endpoints accessible
+# ✅ Can delete planets (exclusive permission)
+# ✅ Can view all users
+# ✅ Can assign/remove planets
+
+# PlanetAdmin (PlanetAdmin role):
+# ✅ Can view, create, update planets
+# ❌ Cannot delete planets (SuperAdmin only)
+# ❌ Cannot view all users (SuperAdmin only)
+# ✅ Can evaluate habitability
+# ✅ Can assign/remove planets
+
+# Viewer1 (Viewer1 role):
+# ✅ Can view planets
+# ❌ Cannot create, update, delete planets
+# ❌ Cannot view all users
+# ✅ Can evaluate habitability (full analysis permissions)
+# ❌ Cannot assign/remove planets
+
+# Viewer2 (Viewer2 role):
+# ✅ Can view planets
+# ❌ Cannot create, update, delete planets
+# ❌ Cannot view all users
+# ❌ Cannot evaluate habitability (limited permissions)
+# ❌ Cannot assign/remove planets
+
+# No Authentication:
+# ❌ All protected endpoints should return 401 Unauthorized

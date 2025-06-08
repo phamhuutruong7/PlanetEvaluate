@@ -1,6 +1,7 @@
 @PlanetEvaluateApi_HostAddress = http://localhost:5219
 
-GET {{PlanetEvaluateApi_HostAddress}}/weatherforecast/
-Accept: application/json
+# PlanetEvaluate API Test File
+# Use this file to test various endpoints of the Planet Evaluate API
+# The WeatherForecast endpoint has been removed as part of cleanup
 
 ###

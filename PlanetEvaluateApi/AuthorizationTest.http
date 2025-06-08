@@ -1,0 +1,187 @@
+# Planet Evaluate API Authorization Test
+# This file tests the new permission-based authorization system
+
+### Variables
+@baseUrl = https://localhost:5001/api
+@authToken = {{login.response.body.token}}
+
+### 1. Login as SuperAdmin
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### 2. Get User Permissions
+GET {{baseUrl}}/auth/permissions
+Authorization: Bearer {{authToken}}
+
+### 3. Get Current User
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{authToken}}
+
+### 4. Test Planet Endpoints with SuperAdmin Permissions
+
+#### 4.1. Get All Planets (VIEW_PLANET permission required)
+GET {{baseUrl}}/planets
+Authorization: Bearer {{authToken}}
+
+#### 4.2. Create a New Planet (CREATE_PLANET permission required)
+POST {{baseUrl}}/planets
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Authorization Test Planet",
+  "type": "Terrestrial",
+  "mass": 1.0,
+  "radius": 6371.0,
+  "distanceFromSun": 150.0,
+  "numberOfMoons": 1,
+  "hasAtmosphere": true,
+  "oxygenVolume": 21.0,
+  "waterVolume": 70.0,
+  "hardnessOfRock": 5.5,
+  "threateningCreature": false,
+  "description": "A test planet for authorization validation"
+}
+
+#### 4.3. Get Planet by ID (VIEW_PLANET permission required)
+GET {{baseUrl}}/planets/1
+Authorization: Bearer {{authToken}}
+
+#### 4.4. Update Planet (EDIT_PLANET permission required)
+PUT {{baseUrl}}/planets/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "description": "Updated description for authorization test"
+}
+
+#### 4.5. Delete Planet (DELETE_PLANET permission required)
+DELETE {{baseUrl}}/planets/1
+Authorization: Bearer {{authToken}}
+
+### 5. Test Unauthorized Access (No Token)
+
+#### 5.1. Try to access planets without token
+GET {{baseUrl}}/planets
+
+#### 5.2. Try to create planet without token
+POST {{baseUrl}}/planets
+Content-Type: application/json
+
+{
+  "name": "Unauthorized Planet",
+  "type": "Gas Giant"
+}
+
+### 6. Login as Viewer to Test Limited Permissions
+# @name viewerLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "viewer",
+  "password": "viewer123"
+}
+
+### 7. Test Viewer Permissions
+@viewerToken = {{viewerLogin.response.body.token}}
+
+#### 7.1. Get Viewer Permissions
+GET {{baseUrl}}/auth/permissions
+Authorization: Bearer {{viewerToken}}
+
+#### 7.2. Viewer can view planets
+GET {{baseUrl}}/planets
+Authorization: Bearer {{viewerToken}}
+
+#### 7.3. Viewer cannot create planets (should get 403 Forbidden)
+POST {{baseUrl}}/planets
+Authorization: Bearer {{viewerToken}}
+Content-Type: application/json
+
+{
+  "name": "Forbidden Planet",
+  "type": "Terrestrial"
+}
+
+#### 7.4. Viewer cannot update planets (should get 403 Forbidden)
+PUT {{baseUrl}}/planets/1
+Authorization: Bearer {{viewerToken}}
+Content-Type: application/json
+
+{
+  "description": "This should fail"
+}
+
+#### 7.5. Viewer cannot delete planets (should get 403 Forbidden)
+DELETE {{baseUrl}}/planets/1
+Authorization: Bearer {{viewerToken}}
+
+### 8. Test Invalid Token
+
+#### 8.1. Try with invalid token
+GET {{baseUrl}}/planets
+Authorization: Bearer invalid_token_here
+
+### 9. Login as PlanetAdmin to Test Middle-Tier Permissions
+# @name planetAdminLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "planetadmin",
+  "password": "admin123"
+}
+
+### 10. Test PlanetAdmin Permissions
+@planetAdminToken = {{planetAdminLogin.response.body.token}}
+
+#### 10.1. Get PlanetAdmin Permissions
+GET {{baseUrl}}/auth/permissions
+Authorization: Bearer {{planetAdminToken}}
+
+#### 10.2. PlanetAdmin can view planets
+GET {{baseUrl}}/planets
+Authorization: Bearer {{planetAdminToken}}
+
+#### 10.3. PlanetAdmin can create planets
+POST {{baseUrl}}/planets
+Authorization: Bearer {{planetAdminToken}}
+Content-Type: application/json
+
+{
+  "name": "PlanetAdmin Test Planet",
+  "type": "Rocky",
+  "mass": 0.8,
+  "radius": 5000.0,
+  "distanceFromSun": 120.0,
+  "numberOfMoons": 0,
+  "hasAtmosphere": false,
+  "oxygenVolume": 0.0,
+  "waterVolume": 0.0,
+  "hardnessOfRock": 8.0,
+  "threateningCreature": true,
+  "description": "Planet created by PlanetAdmin for testing"
+}
+
+#### 10.4. PlanetAdmin can edit planets
+PUT {{baseUrl}}/planets/1
+Authorization: Bearer {{planetAdminToken}}
+Content-Type: application/json
+
+{
+  "description": "Updated by PlanetAdmin"
+}
+
+#### 10.5. PlanetAdmin cannot delete planets (only SuperAdmin can)
+# Note: Based on current permission structure, only SuperAdmin has DELETE_PLANET permission
+# This should return 403 Forbidden if following strict role permissions
+DELETE {{baseUrl}}/planets/1
+Authorization: Bearer {{planetAdminToken}}

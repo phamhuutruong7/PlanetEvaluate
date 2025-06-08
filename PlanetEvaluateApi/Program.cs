@@ -15,11 +15,12 @@ namespace PlanetEvaluateApi
         {
             var builder = WebApplication.CreateBuilder(args);            // Add services to the container.
             builder.Services.AddDbContext<PlanetEvaluateDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-            // Register services
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));            // Register services
             builder.Services.AddScoped<IAuthService, AuthService>();
-            builder.Services.AddScoped<IPlanetService, PlanetService>();            // Add JWT Authentication
+            builder.Services.AddScoped<IPlanetService, PlanetService>();
+            builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IHabitabilityEvaluationService, HabitabilityEvaluationService>();
+            builder.Services.AddHttpContextAccessor();// Add JWT Authentication
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
