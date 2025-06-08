@@ -231,28 +231,7 @@ const DashboardPage: React.FC = () => {
         </Paper>        {/* Planets Section */}
         <Paper elevation={3} sx={{ p: 3 }}>
           {/* Debug Section - Remove this later */}
-          <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
-            <Typography variant="h6" gutterBottom>Debug Info:</Typography>            <Typography variant="body2">User authenticated: {user ? 'Yes' : 'No'}</Typography>
-            <Typography variant="body2">Token exists: {localStorage.getItem('authToken') ? 'Yes' : 'No'}</Typography>
-            <Typography variant="body2">Planets count: {planets.length}</Typography>
-            <Typography variant="body2">Loading: {isLoading ? 'Yes' : 'No'}</Typography>
-            <Typography variant="body2">Error: {error || 'None'}</Typography>            <Button 
-              variant="outlined" 
-              size="small" 
-              onClick={() => dispatch(fetchPlanets())}
-              sx={{ mt: 1, mr: 1 }}
-            >
-              Manually Fetch Planets
-            </Button>
-            <Button 
-              variant="outlined" 
-              size="small" 
-              onClick={() => dispatch(initializeAuth())}
-              sx={{ mt: 1 }}
-            >
-              Re-initialize Auth
-            </Button>
-          </Box>          <PlanetsGrid
+          <PlanetsGrid
             planets={planets}
             isLoading={isLoading}
             error={error}
