@@ -12,8 +12,8 @@ using PlanetEvaluateApi.Data;
 namespace PlanetEvaluateApi.Migrations
 {
     [DbContext(typeof(PlanetEvaluateDbContext))]
-    [Migration("20250608123816_AddPlanetTable")]
-    partial class AddPlanetTable
+    [Migration("20250608172033_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
