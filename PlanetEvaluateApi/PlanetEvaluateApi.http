@@ -1,0 +1,6 @@
+@PlanetEvaluateApi_HostAddress = http://localhost:5219
+
+GET {{PlanetEvaluateApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
