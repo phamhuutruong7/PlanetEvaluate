@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PlanetEvaluateApi.Data;
 
@@ -11,9 +12,11 @@ using PlanetEvaluateApi.Data;
 namespace PlanetEvaluateApi.Migrations
 {
     [DbContext(typeof(PlanetEvaluateDbContext))]
-    partial class PlanetEvaluateDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250608123816_AddPlanetTable")]
+    partial class AddPlanetTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
