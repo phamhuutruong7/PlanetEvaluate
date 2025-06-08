@@ -8,14 +8,19 @@ namespace PlanetEvaluateApi.Models
     public class HabitabilityEvaluation
     {
         /// <summary>
-        /// The planet being evaluated
+        /// The planet ID being evaluated
         /// </summary>
-        public Planet Planet { get; set; } = null!;
+        public int PlanetId { get; set; }
+
+        /// <summary>
+        /// The planet name being evaluated
+        /// </summary>
+        public string PlanetName { get; set; } = string.Empty;
 
         /// <summary>
         /// Overall habitability score (0-100)
         /// </summary>
-        public double OverallScore { get; set; }
+        public double OverallHabitabilityScore { get; set; }
 
         /// <summary>
         /// Individual factor scores breakdown
@@ -28,14 +33,19 @@ namespace PlanetEvaluateApi.Models
         public HabitabilityLevel HabitabilityLevel { get; set; }
 
         /// <summary>
-        /// Detailed evaluation summary and recommendations
+        /// List of positive habitability factors
         /// </summary>
-        public string EvaluationSummary { get; set; } = string.Empty;
+        public List<string> PositiveFactors { get; set; } = new();
 
         /// <summary>
-        /// List of specific recommendations for improving habitability
+        /// List of negative habitability factors
         /// </summary>
-        public List<string> Recommendations { get; set; } = new();
+        public List<string> NegativeFactors { get; set; } = new();
+
+        /// <summary>
+        /// Detailed evaluation summary
+        /// </summary>
+        public string Summary { get; set; } = string.Empty;
 
         /// <summary>
         /// Timestamp when evaluation was performed

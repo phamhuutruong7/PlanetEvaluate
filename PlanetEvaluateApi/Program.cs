@@ -13,14 +13,19 @@ namespace PlanetEvaluateApi
     {
         public static async Task Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);            // Add services to the container.
+            var builder = WebApplication.CreateBuilder(args);
+            
+            // Add services to the container.
             builder.Services.AddDbContext<PlanetEvaluateDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));            // Register services
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+              // Register services
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IPlanetService, PlanetService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IHabitabilityEvaluationService, HabitabilityEvaluationService>();
-            builder.Services.AddHttpContextAccessor();// Add JWT Authentication
+            builder.Services.AddHttpContextAccessor();
+            
+            // Add JWT Authentication
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
@@ -37,17 +42,18 @@ namespace PlanetEvaluateApi
                 });
 
             builder.Services.AddControllers();
+            
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();            // Add CORS
+            builder.Services.AddSwaggerGen();
+              // Add CORS
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowReactApp",
+                options.AddPolicy("AllowAllOrigins",
                     builder => builder
-                        .WithOrigins("http://localhost:3000", "http://localhost:3001") // React app URLs
+                        .AllowAnyOrigin()
                         .AllowAnyHeader()
-                        .AllowAnyMethod()
-                        .AllowCredentials());
+                        .AllowAnyMethod());
             });
 
             var app = builder.Build();
@@ -57,7 +63,9 @@ namespace PlanetEvaluateApi
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
-            }            app.UseCors("AllowReactApp");
+            }
+            
+            app.UseCors("AllowAllOrigins");
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();
