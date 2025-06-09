@@ -9,7 +9,8 @@ namespace PlanetEvaluateApi.Interfaces
         // Authentication
         Task<UserResponseDto> LoginAsync(LoginUserDto loginDto);
         Task LogoutAsync();
-          // User management
+
+        // User management
         Task<UserResponseDto> GetCurrentUserAsync();
         Task<List<UserResponseDto>> GetAllUsersAsync();
         Task<UserResponseDto> GetUserByIdAsync(int id);

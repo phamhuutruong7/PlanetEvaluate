@@ -20,6 +20,10 @@ namespace PlanetEvaluateApi.Services
             _logger = logger;
         }
 
+        // TODO: These following function is based on suggestion from chatbot.
+        // I can comback to this later and use the condition to send to OpenRouter to use chatbot for reasoning 
+        // which planet is suitable to live. If I have enough time.
+
         public async Task<HabitabilityEvaluation> EvaluatePlanetHabitabilityAsync(int planetId)
         {
             var planet = await _context.Planets.FindAsync(planetId);
@@ -29,27 +33,27 @@ namespace PlanetEvaluateApi.Services
             var evaluation = new HabitabilityEvaluation();
             evaluation.PlanetId = planetId;
             evaluation.PlanetName = planet.Name;
-            
+
             // Calculate factor scores
             var factorScores = CalculateFactorScores(planet);
             evaluation.FactorScores = factorScores;
-            
+
             // Calculate overall score
             evaluation.OverallHabitabilityScore = CalculateOverallScore(factorScores);
-            
+
             // Determine habitability level
             evaluation.HabitabilityLevel = DetermineHabitabilityLevel(evaluation.OverallHabitabilityScore);
-            
+
             // Generate factors lists
             var (positive, negative) = GenerateFactorLists(planet, factorScores);
             evaluation.PositiveFactors = positive;
             evaluation.NegativeFactors = negative;
-            
+
             // Generate summary
             evaluation.Summary = GenerateHabitabilitySummary(evaluation.HabitabilityLevel, evaluation.OverallHabitabilityScore);
-            
+
             evaluation.EvaluatedAt = DateTime.UtcNow;
-            
+
             return evaluation;
         }
 

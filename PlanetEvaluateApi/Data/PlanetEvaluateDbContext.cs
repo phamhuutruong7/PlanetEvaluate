@@ -15,7 +15,9 @@ namespace PlanetEvaluateApi.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder);            // Configure User entity
+            base.OnModelCreating(modelBuilder);
+
+            // TODO: Move these into configuration, if still have time.
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasKey(e => e.Id);
