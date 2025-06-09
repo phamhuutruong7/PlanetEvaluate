@@ -1,3 +1,7 @@
+# Final word
+At the end of this, I think that would be better to write and run this in docker
+it would be easier for user to use that. But I guess it would be fine.
+
 # Planet Evaluation System
 
 A full-stack application for evaluating planet habitability with a React TypeScript frontend and ASP.NET Core backend API.
