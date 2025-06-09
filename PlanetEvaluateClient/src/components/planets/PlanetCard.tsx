@@ -210,7 +210,7 @@ const PlanetCard: React.FC<PlanetCardProps> = ({
             />
           )}
         </Box>
-      </CardContent>      {/* Actions */}
+      </CardContent>      
       <CardActions sx={{ justifyContent: 'flex-end', pt: 0 }}>
         {onEdit && canUserEditPlanet && (
           <Tooltip title="Edit Planet">

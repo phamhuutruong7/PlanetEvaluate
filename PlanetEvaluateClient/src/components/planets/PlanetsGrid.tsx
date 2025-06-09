@@ -132,7 +132,7 @@ const PlanetsGrid: React.FC<PlanetsGridProps> = ({
             onDelete={onDeletePlanet}
           />
         ))}
-      </Box>      {/* Floating Action Button for Add (Alternative position) */}
+      </Box>     
       {onAddPlanet && canUserCreatePlanet && planets.length > 0 && (
         <Fab
           color="primary"
